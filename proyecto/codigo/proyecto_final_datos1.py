@@ -9,16 +9,171 @@ Original file is located at
 En la parte de la lectura de datos usaremos la libreria de pandas con la que crearemos un framework, para que nuestro algoritmo lea mejor los datos.
 """
 
-import pandas
-from time import time
-import sys
+import pandas as pd
 
-pandas.__version__
 
-data0=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/0_train_balanced_15000.csv",sep=";", index_col=0)
-data1=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/1_train_balanced_45000.csv",sep=";", index_col=0)
-data2=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/2_train_balanced_75000.csv",sep=";", index_col=0)
-data3=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/3_train_balanced_105000.csv",sep=";", index_col=0)
-data4=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/4_train_balanced_135000.csv",sep=";", index_col=0)
-data5=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/5_train_balanced_57765.csv",sep=";", index_col=0)
+
+def count(data: pd.DataFrame):
+    '''
+    Returns a diccionary whose keys are pos and neg. The pos key holds the value
+    of how many students succeeded in the test, the neg key holds the value of
+    how many students didn´t.
+    '''
+    dicc = {}
+    dicc["pos"] = data["exito"].sum()
+    # This works since students' success is represented with 1's.
+    # When it sums the data, it will only take into account the 1's, because the 0's
+    # don't change the sum. This leaves us with the number of 1's.
+
+    dicc["neg"] = data["exito"].count() - dicc["1"]  # It counts everything and then
+    # subtracts the sum of 1's, leaving us with the number of 0's.
+    return dicc
+
+
+def gini(data):
+    '''
+    It calculates the Gini Impurity by using its ecuation. N is the diccionary
+    that count returns. The keys in N are pos and neg, their probability is
+    calculating dividing their values by the total number of elements in the
+    column.
+    '''
+    N = count(data)
+    gin = 1
+    for keys in N:
+        probi = N[keys] / float(len(data))
+        gin -= probi ** 2
+    return gin
+
+
+
+def partition(data, condition, column):
+    '''
+    The method divides the dataframe into two smaller dataframes based on
+    whether the element of the column satisfies or not a condition.
+    '''
+    if isinstance(condition, int) or isinstance(condition, float):
+        true_rows = data[data[column] >= condition]
+        false_rows = data[data[column] < condition]
+    else:
+        true_rows = data[data[column] == condition]
+        false_rows = data[data[column] != condition]
+    return true_rows, false_rows
+
+
+def informationGain(left: pd.DataFrame, right: pd.DataFrame, gin):
+    '''
+    This function calculates the information gain in each column
+    args: Two pd.dataframe of a training set, left and right; and the gini impurity
+    of the training dataset.
+    return: The information gain (it is a float data type).
+    '''
+    infog = float((len(left)) / (len(left) + len(right)))
+    return gin - infog * gini(left) - (1 - infog) * gini(right)
+
+
+def vals(serie: pd.Series):
+    lis = []
+    for key in serie.value_counts().index:
+        lis.append(key)
+
+    return lis
+
+
+def bestoption(data: pd.DataFrame):
+    """
+    Finds which is the question that gives the best information gain
+    """
+    maxi = 0
+    bestK = None
+    bestC = None
+    gin = gini(data)
+
+    for key in data.keys():
+        values = vals(data[key])
+        for v in values:
+            true_rows, false_rows = partition(data, v, key)
+
+            if len(true_rows) == 0 or len(false_rows) == 0:
+                continue
+            gain = informationGain(true_rows, false_rows, gin)
+
+            if gain >= gin:
+                gin, bestK, bestC = gain, key, v
+
+    return gin, bestK, bestC
+
+
+class Leaf:
+    '''
+    Is a class that returns a dictionary with how many positives and negatives the DataFrame has.
+    '''
+
+    def __init__(self, data):
+        self.predic = count(data)
+
+
+class Node:
+    '''
+    Is the class that ask the question and has the two child Nodes
+    '''
+
+    def __init__(self, question, True_row, False_row):
+        self.question = question
+        self.True_row = True_row
+        self.False_row = False_row
+
+
+def build(data: pd.DataFrame):
+    '''
+    Builds the tree
+    '''
+    gain, column, value = bestoption(data)
+
+    if gain == 0:
+        return Leaf(data)
+
+    true_row, false_row = partition(data, value, column)
+
+    True_branch = build(true_row)
+    False_branch = build(false_row)
+
+    return Node([column,value], True_branch, False_branch)
+
+
+def printT(node, spacing=""):
+    '''
+    This fuction prints the tree
+
+    '''
+    if isinstance(node, Leaf):
+        print(spacing + "predict", node.predic)
+        return
+
+    print(spacing + str(node.column) + str(node.condition))
+
+    print(spacing + '--> True:')
+    printT(node.True_row, spacing + "  ")
+
+    print(spacing + '--> False:')
+    printT(node.False_row, spacing + "  ")
+
+
+def classify(serie: pd.Series, node):
+    '''
+    Dicide whether to follow the true or false row
+    '''
+
+
+def print_leaf(counts):
+    '''
+    This prints the predictions at a leaf
+    '''
+
+if __name__=="main":
+    data0=pd.read_csv("0_train_balanced_15000.csv",sep=";", index_col=0)
+    data1=pd.read_csv("1_train_balanced_45000.csv",sep=";", index_col=0)
+    data2=pd.read_csv("2_train_balanced_75000.csv",sep=";", index_col=0)
+    data3=pd.read_csv("3_train_balanced_105000.csv",sep=";", index_col=0)
+    data4=pd.read_csv("4_train_balanced_135000.csv",sep=";", index_col=0)
+    data5=pd.read_csv("5_train_balanced_57765.csv",sep=";", index_col=0)
 
