@@ -82,6 +82,8 @@ def vals(serie: pd.Series):
 def bestoption(data: pd.DataFrame):
     """
     Finds which is the question that gives the best information gain
+
+    crear metodo que me diga de una columna cual es el mejor valor, y otra funcion que recorra columnas, eliminar columnas
     """
     maxi = 0
     bestK = None
@@ -169,11 +171,15 @@ def print_leaf(counts):
     This prints the predictions at a leaf
     '''
 
+def organice(data: pd.DataFrame):
+    data.drop(["periodo","estu_exterior",'estu_cursodocentesies','estu_tipodocumento.1','estu_nacionalidad.1','estu_genero.1','estu_fechanacimiento.1','periodo.1',
+               "estu_estudiante.1",'estu_pais_reside.1','estu_inst_cod_departamento','estu_cod_reside_depto.1','estu_mcpio_reside.1','estu_cod_reside_mcpio.1',
+               'fami_pisoshogar','fami_tienemicroondas','fami_tienehorno','fami_tieneautomovil.1','fami_tienedvd','fami_tiene_nevera.1','cole_codigo_icfes',
+               'cole_cod_dane_establecimiento', 'cole_nombre_establecimiento','cole_genero','cole_naturaleza','cole_calendario','cole_cod_dane_sede','cole_nombre_sede',
+               'cole_sede_principal','cole_cod_mcpio_ubicacion','cole_mcpio_ubicacion','cole_cod_depto_ubicacion',],axis=1,inplace=True)
+    return data
+
+
 if __name__=="main":
     data0=pd.read_csv("0_train_balanced_15000.csv",sep=";", index_col=0)
-    data1=pd.read_csv("1_train_balanced_45000.csv",sep=";", index_col=0)
-    data2=pd.read_csv("2_train_balanced_75000.csv",sep=";", index_col=0)
-    data3=pd.read_csv("3_train_balanced_105000.csv",sep=";", index_col=0)
-    data4=pd.read_csv("4_train_balanced_135000.csv",sep=";", index_col=0)
-    data5=pd.read_csv("5_train_balanced_57765.csv",sep=";", index_col=0)
 
