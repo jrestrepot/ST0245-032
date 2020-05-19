@@ -28,7 +28,40 @@ def count(data: pd.DataFrame):
     dicc["neg"] = data["exito"].count() - dicc["1"]  # It counts everything and then
     # subtracts the sum of 1's, leaving us with the number of 0's.
     return dicc
+def vals(serie: pd.Series):
+    lis = []
+    for key in serie.value_counts().index:
+        lis.append(key)
 
+    return lis
+
+class question:
+    '''
+    This class represents the posible questions, their arguments are column and value
+    '''
+
+
+def __init__(self,column,value):
+    self.column=column
+    self.value=value
+def __repr__(self):
+    cond="=="
+    if isinstance(self.value,int) or isinstance(self.value,float):
+      cond=">="
+    return "Is %s %s %s?" % (self.column, cond, str(self.value))
+
+def partition(data, question):
+    '''
+    The method divides the dataframe into two smaller dataframes based on
+    whether the element of the column satisfies or not a condition.
+    '''
+    if isinstance(question.value, int) or isinstance(question.value, float):
+        true_rows = data[data[question.column] >= question.value]
+        false_rows = data[data[question.column] < question.value]
+    else:
+        true_rows = data[data[question.column] == question.value]
+        false_rows = data[data[question.column] != question.value]
+    return true_rows, false_rows
 
 def gini(data):
     '''
@@ -46,18 +79,6 @@ def gini(data):
 
 
 
-def partition(data, condition, column):
-    '''
-    The method divides the dataframe into two smaller dataframes based on
-    whether the element of the column satisfies or not a condition.
-    '''
-    if isinstance(condition, int) or isinstance(condition, float):
-        true_rows = data[data[column] >= condition]
-        false_rows = data[data[column] < condition]
-    else:
-        true_rows = data[data[column] == condition]
-        false_rows = data[data[column] != condition]
-    return true_rows, false_rows
 
 
 def informationGain(left: pd.DataFrame, right: pd.DataFrame, gin):
@@ -71,40 +92,34 @@ def informationGain(left: pd.DataFrame, right: pd.DataFrame, gin):
     return gin - infog * gini(left) - (1 - infog) * gini(right)
 
 
-def vals(serie: pd.Series):
-    lis = []
-    for key in serie.value_counts().index:
-        lis.append(key)
 
-    return lis
 
 
 def bestoption(data: pd.DataFrame):
     """
     Finds which is the question that gives the best information gain
 
-    crear metodo que me diga de una columna cual es el mejor valor, y otra funcion que recorra columnas, eliminar columnas
+
     """
     maxi = 0
-    bestK = None
-    bestC = None
+    bestquestion = None
     gin = gini(data)
-
     for key in data.keys():
         values = vals(data[key])
+        if key == "exito":
+            continue
         for v in values:
-            true_rows, false_rows = partition(data, v, key)
+            q = question(key, v)
+            true_rows, false_rows = partition(data, q)
 
             if len(true_rows) == 0 or len(false_rows) == 0:
                 continue
             gain = informationGain(true_rows, false_rows, gin)
 
-            if gain >= gin:
-                gin, bestK, bestC = gain, key, v
+            if gain >= maxi:
+                maxi, bestquestion = gain, q
 
-    return gin, bestK, bestC
-
-
+    return maxi, bestquestion
 class Leaf:
     '''
     Is a class that returns a dictionary with how many positives and negatives the DataFrame has.
@@ -129,18 +144,17 @@ def build(data: pd.DataFrame):
     '''
     Builds the tree
     '''
-    gain, column, value = bestoption(data)
+    gain, ques = bestoption(data)
 
     if gain == 0:
         return Leaf(data)
 
-    true_row, false_row = partition(data, value, column)
+    true_row, false_row = partition(data, ques)
 
     True_branch = build(true_row)
     False_branch = build(false_row)
 
-    return Node([column,value], True_branch, False_branch)
-
+    return Node(ques, True_branch, False_branch)
 
 def printT(node, spacing=""):
     '''
@@ -151,7 +165,7 @@ def printT(node, spacing=""):
         print(spacing + "predict", node.predic)
         return
 
-    print(spacing + str(node.column) + str(node.condition))
+    print(spacing + str(node.question))
 
     print(spacing + '--> True:')
     printT(node.True_row, spacing + "  ")
