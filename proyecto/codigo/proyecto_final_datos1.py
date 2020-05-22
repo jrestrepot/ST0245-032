@@ -8,7 +8,8 @@ Original file is located at
 
 En la parte de la lectura de datos usaremos la libreria de pandas con la que crearemos un framework, para que nuestro algoritmo lea mejor los datos.
 """
-
+import cProfile
+import re
 import pandas as pd
 from time import time
 import sys
@@ -27,7 +28,7 @@ def count(data: pd.DataFrame):
     # When it sums the data, it will only take into account the 1's, because the 0's
     # don't change the sum. This leaves us with the number of 1's.
 
-    dicc["neg"] = data["exito"].count() - dicc["1"]  # It counts everything and then
+    dicc["neg"] = data["exito"].count() - dicc["pos"]  # It counts everything and then
     # subtracts the sum of 1's, leaving us with the number of 0's.
     return dicc
 def vals(serie: pd.Series):
@@ -196,7 +197,13 @@ def organice(data: pd.DataFrame):
     return data
 
 
-if __name__=="main":
-    data0=pd.read_csv("0_train_balanced_15000.csv",sep=";", index_col=0)
+pr=cProfile.Profile()
+pr.enable()
+data0=pd.read_csv("0_train_balanced_15000.csv",sep=";", index_col=0)
+data0=organice(data0)
+mytree=build(data0)
+printT(mytree)
+pr.disable()
+pr.print_stats()
 
 
