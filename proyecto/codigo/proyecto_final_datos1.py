@@ -9,16 +9,62 @@ Original file is located at
 En la parte de la lectura de datos usaremos la libreria de pandas con la que crearemos un framework, para que nuestro algoritmo lea mejor los datos.
 """
 
-import pandas
+import pandas as pd
 from time import time
 import sys
+import numpy as np
 
-pandas.__version__
 
-data0=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/0_train_balanced_15000.csv",sep=";", index_col=0)
-data1=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/1_train_balanced_45000.csv",sep=";", index_col=0)
-data2=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/2_train_balanced_75000.csv",sep=";", index_col=0)
-data3=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/3_train_balanced_105000.csv",sep=";", index_col=0)
-data4=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/4_train_balanced_135000.csv",sep=";", index_col=0)
-data5=pandas.read_csv("https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/5_train_balanced_57765.csv",sep=";", index_col=0)
+def informationgain(data: pd.DataFrame):
+    '''
+    This function calculates the information gains in each column
+    args: pd.dataframe of a training set
+    return: a sort pd.series of each column
+
+    '''
+
+    n = data["exito"].sum()
+    total = data["exito"].count()
+    totalentropy = -(n / total) * np.log2(n / total) - ((total - n) / total) * np.log2((total - n) / total)
+    lista = []
+    for i in data.columns:
+        if i == "exito":
+            continue
+        group = data[[i, "exito"]]
+        t = group[[i, "exito"]].groupby(i).count()
+        m = group[[i, "exito"]].groupby(i).sum()
+        pos = m / t
+        neg = (t - m) / t
+        w = t / group["exito"].count()
+
+        n = -(pos * np.log2(pos) + neg * np.log2(neg))
+        n = n * w
+        lista.append(n.sum() - totalentropy)
+
+
+def partition(data, condition, column):
+    true_rows = data[data[column] >= condition]
+    false_rows = data[data[column] < condition]
+    return true_rows, false_rows
+
+
+if __name__ == "main":
+    data0 = pd.read_csv(
+        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/0_train_balanced_15000.csv",
+        sep=";", index_col=0)
+    data1 = pd.read_csv(
+        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/1_train_balanced_45000.csv",
+        sep=";", index_col=0)
+    data2 = data, pd.read_csv(
+        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/2_train_balanced_75000.csv",
+        sep=";", index_col=0)
+    data3 = pd.read_csv(
+        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/3_train_balanced_105000.csv",
+        sep=";", index_col=0)
+    data4 = pd.read_csv(
+        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/4_train_balanced_135000.csv",
+        sep=";", index_col=0)
+    data5 = pd.read_csv(
+        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/5_train_balanced_57765.csv",
+        sep=";", index_col=0)
 
