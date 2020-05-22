@@ -15,56 +15,188 @@ import sys
 import numpy as np
 
 
-def informationgain(data: pd.DataFrame):
+def count(data: pd.DataFrame):
     '''
-    This function calculates the information gains in each column
-    args: pd.dataframe of a training set
-    return: a sort pd.series of each column
+    Returns a diccionary whose keys are pos and neg. The pos key holds the value
+    of how many students succeeded in the test, the neg key holds the value of
+    how many students didn´t.
+    '''
+    dicc = {}
+    dicc["pos"] = data["exito"].sum()
+    # This works since students' success is represented with 1's.
+    # When it sums the data, it will only take into account the 1's, because the 0's
+    # don't change the sum. This leaves us with the number of 1's.
 
+    dicc["neg"] = data["exito"].count() - dicc["1"]  # It counts everything and then
+    # subtracts the sum of 1's, leaving us with the number of 0's.
+    return dicc
+def vals(serie: pd.Series):
+    lis = []
+    for key in serie.value_counts().index:
+        lis.append(key)
+
+    return lis
+
+class question:
+    '''
+    This class represents the posible questions, their arguments are column and value
     '''
 
-    n = data["exito"].sum()
-    total = data["exito"].count()
-    totalentropy = -(n / total) * np.log2(n / total) - ((total - n) / total) * np.log2((total - n) / total)
-    lista = []
-    for i in data.columns:
-        if i == "exito":
-            continue
-        group = data[[i, "exito"]]
-        t = group[[i, "exito"]].groupby(i).count()
-        m = group[[i, "exito"]].groupby(i).sum()
-        pos = m / t
-        neg = (t - m) / t
-        w = t / group["exito"].count()
 
-        n = -(pos * np.log2(pos) + neg * np.log2(neg))
-        n = n * w
-        lista.append(n.sum() - totalentropy)
+    def __init__(self,column,value):
+        self.column=column
+        self.value=value
+    def __repr__(self):
+        cond="=="
+        if isinstance(self.value,int) or isinstance(self.value,float):
+            cond=">="
+        return "Is %s %s %s?" % (self.column, cond, str(self.value))
 
-
-def partition(data, condition, column):
-    true_rows = data[data[column] >= condition]
-    false_rows = data[data[column] < condition]
+def partition(data, question):
+    '''
+    The method divides the dataframe into two smaller dataframes based on
+    whether the element of the column satisfies or not a condition.
+    '''
+    if isinstance(question.value, int) or isinstance(question.value, float):
+        true_rows = data[data[question.column] >= question.value]
+        false_rows = data[data[question.column] < question.value]
+    else:
+        true_rows = data[data[question.column] == question.value]
+        false_rows = data[data[question.column] != question.value]
     return true_rows, false_rows
 
+def gini(data):
+    '''
+    It calculates the Gini Impurity by using its ecuation. N is the diccionary
+    that count returns. The keys in N are pos and neg, their probability is
+    calculating dividing their values by the total number of elements in the
+    column.
+    '''
+    N = count(data)
+    gin = 1
+    for keys in N:
+        probi = N[keys] / float(len(data))
+        gin -= probi ** 2
+    return gin
 
-if __name__ == "main":
-    data0 = pd.read_csv(
-        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/0_train_balanced_15000.csv",
-        sep=";", index_col=0)
-    data1 = pd.read_csv(
-        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/1_train_balanced_45000.csv",
-        sep=";", index_col=0)
-    data2 = data, pd.read_csv(
-        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/2_train_balanced_75000.csv",
-        sep=";", index_col=0)
-    data3 = pd.read_csv(
-        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/3_train_balanced_105000.csv",
-        sep=";", index_col=0)
-    data4 = pd.read_csv(
-        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/4_train_balanced_135000.csv",
-        sep=";", index_col=0)
-    data5 = pd.read_csv(
-        "https://raw.githubusercontent.com/mauriciotoro/ST0245-Eafit/master/proyecto/datasets/5_train_balanced_57765.csv",
-        sep=";", index_col=0)
+
+
+
+
+def informationGain(left: pd.DataFrame, right: pd.DataFrame, gin):
+    '''
+    This function calculates the information gain in each column
+    args: Two pd.dataframe of a training set, left and right; and the gini impurity
+    of the training dataset.
+    return: The information gain (it is a float data type).
+    '''
+    infog = float((len(left)) / (len(left) + len(right)))
+    return gin - infog * gini(left) - (1 - infog) * gini(right)
+
+
+
+
+
+def bestoption(data: pd.DataFrame):
+    """
+    Finds which is the question that gives the best information gain
+
+
+    """
+    maxi = 0
+    bestquestion = None
+    gin = gini(data)
+    for key in data.keys():
+        values = vals(data[key])
+        if key == "exito":
+            continue
+        for v in values:
+            q = question(key, v)
+            true_rows, false_rows = partition(data, q)
+
+            if len(true_rows) == 0 or len(false_rows) == 0:
+                continue
+            gain = informationGain(true_rows, false_rows, gin)
+
+            if gain >= maxi:
+                maxi, bestquestion = gain, q
+
+    return maxi, bestquestion
+class Leaf:
+    '''
+    Is a class that returns a dictionary with how many positives and negatives the DataFrame has.
+    '''
+
+    def __init__(self, data):
+        self.predic = count(data)
+
+
+class Node:
+    '''
+    Is the class that ask the question and has the two child Nodes
+    '''
+
+    def __init__(self, question, True_row, False_row):
+        self.question = question
+        self.True_row = True_row
+        self.False_row = False_row
+
+
+def build(data: pd.DataFrame):
+    '''
+    Builds the tree
+    '''
+    gain, ques = bestoption(data)
+
+    if gain == 0:
+        return Leaf(data)
+
+    true_row, false_row = partition(data, ques)
+
+    True_branch = build(true_row)
+    False_branch = build(false_row)
+
+    return Node(ques, True_branch, False_branch)
+
+def printT(node, spacing=""):
+    '''
+    This fuction prints the tree
+
+    '''
+    if isinstance(node, Leaf):
+        print(spacing + "predict", node.predic)
+        return
+
+    print(spacing + str(node.question))
+
+    print(spacing + '--> True:')
+    printT(node.True_row, spacing + "  ")
+
+    print(spacing + '--> False:')
+    printT(node.False_row, spacing + "  ")
+
+
+def classify(serie: pd.Series, node):
+    '''
+    Dicide whether to follow the true or false row
+    '''
+
+
+def print_leaf(counts):
+    '''
+    This prints the predictions at a leaf
+    '''
+
+def organice(data: pd.DataFrame):
+    data.drop(["periodo","estu_exterior",'estu_cursodocentesies','estu_tipodocumento.1','estu_nacionalidad.1','estu_genero.1','estu_fechanacimiento.1','periodo.1',
+               "estu_estudiante.1",'estu_pais_reside.1','estu_inst_cod_departamento','estu_cod_reside_depto.1','estu_mcpio_reside.1','estu_cod_reside_mcpio.1',
+               'fami_pisoshogar','fami_tienemicroondas','fami_tienehorno','fami_tieneautomovil.1','fami_tienedvd','fami_tiene_nevera.1','cole_codigo_icfes',
+               'cole_cod_dane_establecimiento', 'cole_nombre_establecimiento','cole_genero','cole_naturaleza','cole_calendario','cole_cod_dane_sede','cole_nombre_sede',
+               'cole_sede_principal','cole_cod_mcpio_ubicacion','cole_mcpio_ubicacion','cole_cod_depto_ubicacion',],axis=1,inplace=True)
+    return data
+
+
+if __name__=="main":
+    data0=pd.read_csv("0_train_balanced_15000.csv",sep=";", index_col=0)
+
 
