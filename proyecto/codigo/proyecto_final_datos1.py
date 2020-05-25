@@ -6,11 +6,7 @@ Original file is located at
 En la parte de la lectura de datos usaremos la libreria de pandas con la que crearemos un framework, para que nuestro algoritmo lea mejor los datos.
 """
 import cProfile
-import re
 import pandas as pd
-from time import time
-import sys
-import numpy as np
 
 
 def count(data: pd.DataFrame):
@@ -144,7 +140,7 @@ def build(data: pd.DataFrame):
     '''
     gain, ques = bestoption(data)
 
-    if gain == 0 or len(data.columns)<=100:
+    if gain == 0 or data.shape[0]<=100:
         return Leaf(data)
     
     true_row, false_row = partition(data, ques)
