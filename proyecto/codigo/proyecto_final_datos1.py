@@ -120,7 +120,7 @@ class Leaf:
     '''
 
     def __init__(self, data):
-        self.predic = count(data)
+        self.predic = count(data)["pos"]/len(data)
 
 
 class Node:
@@ -171,12 +171,17 @@ def classify(serie: pd.Series, node):
     '''
     Dicide whether to follow the true or false row
     '''
+    if isinstance(node, Leaf):
+        if node.predic >= 0.5:
+            return node.predic, 1
+        else:
+            return node.predic, 0
 
+    if serie[node.question.column] == node.question.value:
+        return classify(serie, node.True_row)
+    else:
+        return classify(serie, node.False_row)
 
-def print_leaf(counts):
-    '''
-    This prints the predictions at a leaf
-    '''
 
 def organice(data: pd.DataFrame):
     data.drop(["periodo","estu_exterior",'estu_cursodocentesies','estu_tipodocumento.1','estu_nacionalidad.1','estu_genero.1','estu_fechanacimiento.1','periodo.1',
