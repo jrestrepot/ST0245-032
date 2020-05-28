@@ -134,19 +134,19 @@ class Node:
         self.False_row = False_row
 
 
-def build(data: pd.DataFrame):
+def build(data: pd.DataFrame, deep):
     '''
     Builds the tree
     '''
     gain, ques = bestoption(data)
 
-    if gain == 0 or data.shape[0]<=100:
+    if deep==0:
         return Leaf(data)
     
     true_row, false_row = partition(data, ques)
 
-    True_branch = build(true_row)
-    False_branch = build(false_row)
+    True_branch = build(true_row,deep-1)
+    False_branch = build(false_row,deep-1)
 
     return Node(ques, True_branch, False_branch)
 
