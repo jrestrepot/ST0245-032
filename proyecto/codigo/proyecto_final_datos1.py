@@ -9,6 +9,8 @@ crearemos un framework, para que nuestro algoritmo lea mejor los datos.
 """
 
 import pandas as pd
+import numpy
+from sklearn.metrics import confusion_matrix
 
 
 def count(data: pd.DataFrame):
@@ -50,6 +52,13 @@ class question:
     def __init__(self,column,value):
         self.column=column
         self.value=value
+
+    def match(self,row):
+        val=row[self.column]
+        if isinstance(val, (str,float)):
+            return val == self.value
+        else:
+            return val >= self.value
         
     def __repr__(self):
         '''
@@ -58,7 +67,7 @@ class question:
         cond="=="
         if isinstance(self.value,int) or isinstance(self.value,float):
             cond=">="
-        return "Is %s %s %s?" % (self.column, cond, str(self.value))
+        return "Es %s %s %s?" % (self.column, cond, str(self.value))
    
     
 
@@ -195,11 +204,11 @@ def classify(serie: pd.Series, node):
     '''
     if isinstance(node, Leaf):
         if node.predic >= 0.5:
-            return node.predic, "Exitoso"
+            return node.predic, 1
         else:
-            return node.predic, "No exitoso"
+            return node.predic, 0
 
-    if serie[node.question.column] == node.question.value:
+    if node.question.match(serie):
         return classify(serie, node.True_row)
     else:
         return classify(serie, node.False_row)
@@ -215,9 +224,19 @@ def organice(data: pd.DataFrame):
 
 
 #TEST:
-data0=pd.read_csv("https://raw.githubusercontent.com/jrestrepot/ST0245-032/master/proyecto/codigo/0_train_balanced_15000.csv",sep=";", index_col=0)
+data0=pd.read_csv("4_train_balanced_135000.csv",sep=";", index_col=0)
 data0=organice(data0)
 mytree=build(data0, 8)
-printT(mytree)
-dataset=pd.read_csv("https://raw.githubusercontent.com/jrestrepot/ST0245-032/master/proyecto/codigo/0_test_balanced_5000.csv",sep=";", index_col=0)
-print(classify(dataset.iloc[1],mytree))
+dataset=pd.read_csv("4_test_balanced_45000.csv",sep=";", index_col=0)
+exito=[]
+proba=[]
+for i in range(len(dataset)):
+    a,b=classify(dataset.iloc[i],mytree)
+    exito.append(b)
+    proba.append(a)
+print(confusion_matrix(dataset["exito"],exito))
+
+
+
+
+
