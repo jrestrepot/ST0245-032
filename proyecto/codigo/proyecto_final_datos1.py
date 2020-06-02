@@ -1,4 +1,3 @@
-  
 # -*- coding: utf-8 -*-
 """Proyecto_final_datos1.ipynb
 David Vergara Patiño
@@ -12,6 +11,20 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
 
 def count(data: pd.DataFrame):
+    '''
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        The dataframe that is left in a Leaf (the attribute data of the Leaf).
+
+    Returns
+    -------
+    dicc : Dictionary
+        A dictionary with two keys: neg and pos. Their values are the number of 
+        unsuccessful and successful students, respectively.
+
+    '''
     '''
     Returns a diccionary whose keys are pos and neg. The pos key holds the value
     of how many students succeeded in the test, the neg key holds the value of
@@ -33,8 +46,16 @@ def count(data: pd.DataFrame):
 
 def vals(serie: pd.Series):
     '''
-    Input: a Serie (a column of the DataFrame).
-    It returns a list containing the unique values of the column.
+  Parameters
+    ----------
+    serie : pd.Series
+        A column in the dataframe.
+
+    Returns
+    -------
+    lis : List
+        A list with the unique values of the column.
+
     '''
     lis = []
     for key in serie.value_counts().index: 
@@ -52,6 +73,21 @@ class question:
         self.value=value
 
     def match(self,row):
+        '''
+        Parameters
+    ----------
+    row: pd.Series
+        A row of the dataframe (a student and his information)
+    self: question
+        The question related to the node of interest
+        
+    Returns
+    -------
+    True or False : Boolean
+        If the val is numeric, it returns True if it is greater or equal than
+        the question´s value.If val is a string, it returns True if it is equal
+        to the question´s value.
+        '''
         val=row[self.column]
         if isinstance(val, str):
             return val == self.value
@@ -60,7 +96,16 @@ class question:
         
     def __repr__(self):
         '''
-        This method prints the object question in a String format.
+         Parameters
+    ----------
+    self: question
+        The question related to the node of interest
+        
+    Returns
+    -------
+     : str
+         Makes the question into a string.
+      
         '''
         cond="=="
         if isinstance(self.value,int) or isinstance(self.value,float):
@@ -70,6 +115,24 @@ class question:
     
 
 def partition(data, question):
+    '''
+    
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        The dataframe of interest.
+    question : question
+        A question that will be evaluated.
+
+    Returns
+    -------
+    true_rows : pd.DataFrame
+        The dataframe that contains the students that fulfil the condition.
+    false_rows : TYPE
+        The dataframde that contains the students that do not fulful the condition.
+
+    '''
     '''
     The method divides the dataframe into two smaller dataframes based on
     whether the element of the column satisfies or not a condition.
@@ -84,6 +147,17 @@ def partition(data, question):
 
 def gini(data):
     '''
+       Parameters
+    ----------
+    data : pd.DataFrame
+        The dataframe in a Node.
+
+    Returns
+    -------
+    gin : Float
+       The gini impurity of the recieved data.
+    '''
+    '''
     It calculates the Gini Impurity by using its ecuation. N is the diccionary
     that count returns. The keys in N are pos and neg, their probability is
     calculating dividing their values by the total number of elements in the
@@ -97,19 +171,45 @@ def gini(data):
     return gin
 
 def informationGain(left: pd.DataFrame, right: pd.DataFrame, gin):
+      
     '''
-    This function calculates the information gain in each column
-    args: Two pd.dataframe of a training set, left and right; and the gini impurity
-    of the training dataset.
-    return: The information gain (it is a float data type).
+       Parameters
+    ----------
+    left : pd.DataFrame
+        The dataframe that has the data that does not fulfil the condition.
+    right : pd.DataFrame
+        The dataframe that contains the data that fulfils the condition.
+    gin: float
+        The gini impurity of the parent dataframe.
+
+    Returns
+    -------
+     : Float
+       The information gain of the condition.
     '''
     infog = float((len(left)) / (len(left) + len(right)))
     return gin - infog * gini(left) - (1 - infog) * gini(right)
 
 def bestoption(data: pd.DataFrame):
+    '''
+    
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        The dataframe of interest.
+
+    Returns
+    -------
+    maxi : Float
+        Best information gain.
+    bestquestion : question
+        The question with best information gain.
+
+    '''
+    
     """
     Finds which is the question that gives the best information gain.
-    Returns the maximun information gain and the best question.
     """
     maxi = 0
     bestquestion = None
@@ -133,12 +233,11 @@ def bestoption(data: pd.DataFrame):
 
 class Leaf:
     '''
-    Is a class that returns a dictionary with how many positives and negatives 
-    the DataFrame has.
-    Its argument is a Data Frame (the data set).
+    Its argument is a Data Frame.
     '''
 
     def __init__(self, data):
+
         self.predic =  count(data)["pos"]/len(data)
 
 class Node:
@@ -155,9 +254,20 @@ class Node:
 
 def build(data: pd.DataFrame, deep):
     '''
-    This method builds the tree.
-    Inputs: Data set and how deep the user wants the decision tree to be.
-    Returns: Decision tree.
+    
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        The dataframe of interest.
+    deep : int
+        The desired depth that the user wants the tree to have.
+
+    Returns
+    -------
+    Binary Tree
+        The binary decision tree that will be used to predict students' performances.
+
     '''
     gain, bestQues = bestoption(data)
 
@@ -181,7 +291,19 @@ def build(data: pd.DataFrame, deep):
 
 def printT(node, spacing=""):
     '''
-    This fuction prints the tree.
+    
+
+    Parameters
+    ----------
+    node : Node
+        The binary decision tree that was created using build.
+    spacing : 
+        The default is "".
+
+    Returns
+    -------
+    None.
+
     '''
     if isinstance(node, Leaf):
         print(spacing + "predict", node.predic)
@@ -196,6 +318,24 @@ def printT(node, spacing=""):
     printT(node.False_row, spacing + "  ")
 
 def classify(serie: pd.Series, node):
+    '''
+    
+
+    Parameters
+    ----------
+    serie : pd.Series
+        A row of the dataframe (a student and his information).
+    node : Binary tree
+        The binary decision tree that was created using build.
+
+    Returns
+    -------
+    Float
+        The probability of the student´s academic success.
+    Int
+        Returns 1 if the student ill be successful and 0 if it is not the case.
+
+    '''
     '''
     Decides whether a particular student will be or not successful by placing him/her
     on a leaf of the already built decision tree.
@@ -213,6 +353,20 @@ def classify(serie: pd.Series, node):
   
 
 def organice(data: pd.DataFrame):
+    '''
+    
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        The original dataframe.
+
+    Returns
+    -------
+    data : pd.DataFrame
+        A new dataframe without useless columns.
+
+    '''
     data.drop(["periodo","estu_exterior",'estu_cursodocentesies','estu_tipodocumento.1','estu_nacionalidad.1','estu_genero.1','estu_fechanacimiento.1','periodo.1',
                "estu_estudiante.1",'estu_pais_reside.1','estu_inst_cod_departamento','estu_cod_reside_depto.1','estu_mcpio_reside.1','estu_cod_reside_mcpio.1',
                'fami_pisoshogar','fami_tienemicroondas','fami_tienehorno','fami_tieneautomovil.1','fami_tienedvd','fami_tiene_nevera.1','cole_codigo_icfes',
@@ -238,4 +392,3 @@ if __name__=="__main__":
     print(proba)
     print(accuracy_score(dataset["exito"],exito))
     print(confusion_matrix(dataset["exito"],exito))
-
