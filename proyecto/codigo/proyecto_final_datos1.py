@@ -9,7 +9,7 @@ Juliana Restrepo Tobar
 import pandas as pd
 import numpy
 from sklearn.metrics import confusion_matrix
-
+from sklearn.metrics import accuracy_score
 
 def count(data: pd.DataFrame):
     '''
@@ -53,7 +53,7 @@ class question:
 
     def match(self,row):
         val=row[self.column]
-        if isinstance(val, (str,float)):
+        if isinstance(val, str):
             return val == self.value
         else:
             return val >= self.value
@@ -217,19 +217,25 @@ def organice(data: pd.DataFrame):
                "estu_estudiante.1",'estu_pais_reside.1','estu_inst_cod_departamento','estu_cod_reside_depto.1','estu_mcpio_reside.1','estu_cod_reside_mcpio.1',
                'fami_pisoshogar','fami_tienemicroondas','fami_tienehorno','fami_tieneautomovil.1','fami_tienedvd','fami_tiene_nevera.1','cole_codigo_icfes',
                'cole_cod_dane_establecimiento', 'cole_nombre_establecimiento','cole_genero','cole_naturaleza','cole_calendario','cole_cod_dane_sede','cole_nombre_sede',
-               'cole_sede_principal','cole_cod_mcpio_ubicacion','cole_mcpio_ubicacion','cole_cod_depto_ubicacion',],axis=1,inplace=True)
+               'cole_sede_principal','cole_cod_mcpio_ubicacion','cole_mcpio_ubicacion','cole_cod_depto_ubicacion',"estu_tieneetnia",],axis=1,inplace=True)
+    data = data.fillna("")
     return data
 
 
-#TEST:
-data0=pd.read_csv("https://raw.githubusercontent.com/jrestrepot/ST0245-032/master/proyecto/codigo/4_train_balanced_135000.csv",sep=";", index_col=0)
-data0=organice(data0)
-mytree=build(data0, 8)
-dataset=pd.read_csv("https://raw.githubusercontent.com/jrestrepot/ST0245-032/master/proyecto/codigo/4_test_balanced_45000.csv",sep=";", index_col=0)
-exito=[]
-proba=[]
-for i in range(len(dataset)):
-    a,b=classify(dataset.iloc[i],mytree)
-    exito.append(b)
-    proba.append(a)
-print(confusion_matrix(dataset["exito"],exito))
+if __name__=="__main__":
+    data0=pd.read_csv("4_train_balanced_135000.csv",sep=";", index_col=0)
+    data0=organice(data0)
+    mytree=build(data0, 8)
+    dataset=pd.read_csv("4_test_balanced_45000.csv",sep=";", index_col=0)
+    dataset=organice(dataset)
+    exito=[]
+    proba=[]
+    for i in range(len(dataset)):
+        a,b=classify(dataset.iloc[i],mytree)
+        exito.append(b)
+        proba.append(a)
+    print(exito)
+    print(proba)
+    print(accuracy_score(dataset["exito"],exito))
+    print(confusion_matrix(dataset["exito"],exito))
+
